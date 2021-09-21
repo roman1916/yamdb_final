@@ -49,41 +49,28 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
-    needs: build_image_into_docker_hub
+    needs: build_and_push_to_docker_hub
     steps:
-      - uses: actions/checkout@master
-
-      - name: Copy file into remote server with scp
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USER }}
-          key: ${{ secrets.SSH_KEY }}
-          passphrase: ${{ secrets.PASSPHRASE }}
-          rm: true
-          source: "./nginx/*,./docker-compose.yaml"
-          target: "./yamdb_deploy"
-
       - name: executing remote ssh commands to deploy
         uses: appleboy/ssh-action@master
-        env:
-          ENV_FILE: ${{ secrets.PROD_ENV_FILE }}
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.PASSPHRASE }}
-          envs: ENV_FILE
+          stack_file_name: docker-compose.yaml
           script: |
-            cd yamdb_deploy/
-            echo $ENV_FILE |tr ' ' '\n' > .env
-            sudo docker pull sh2man/yamdb:latest
-            if [ -n "$(sudo docker ps -a -q)" ]; then
-                sudo docker stop $(sudo docker ps -a -q)
-            fi
+            sudo docker pull shakhabkhan/yamdb_final
+            sudo docker-compose stop
+            sudo docker-compose rm web
+            touch .env
+            echo DB_ENGINE=${{ secrets.DB_ENGINE }} >> .env
+            echo DB_NAME=${{ secrets.DB_NAME }} >> .env
+            echo POSTGRES_USER=${{ secrets.POSTGRES_USER }} >> .env
+            echo POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} >> .env
+            echo DB_HOST=${{ secrets.DB_HOST }} >> .env
+            echo DB_PORT=${{ secrets.DB_PORT }} >> .env
             sudo docker-compose up -d
-            sudo docker-compose exec -T web python manage.py collectstatic --no-input
-            sudo docker image prune -f
 
   send_message:
     runs-on: ubuntu-latest
