@@ -24,8 +24,7 @@ jobs:
       run: |
         python -m flake8
         python manage.py test
-      with:
-        key: ${{ secrets.SECRET_KEY }}
+      key: ${{ secrets.SECRET_KEY }}
     
   build_and_push_to_docker_hub:
     name: Push Docker image to Docker Hub
