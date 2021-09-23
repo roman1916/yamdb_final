@@ -10,7 +10,7 @@ services:
       - ./.env
   
   web:
-    build: .
+    image: shakhabkhan/yamdb_final
     restart: always
     volumes:
       - static_value:/code/static/
